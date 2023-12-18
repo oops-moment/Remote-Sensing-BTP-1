@@ -1,1 +1,6 @@
-hey
+COMMANDS:
+! git clone https://github.com/oops-moment/Remote-Sensing-BTP-1.git
+%cd Remote-Sensing-BTP-1/
+!git config --global user.email "prisha.kumar@students.iiit.ac.in"
+! git config --global user.name "oops-moment"
+! git push https://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@github.com/oops-moment/Remote-Sensing-BTP-1.git
