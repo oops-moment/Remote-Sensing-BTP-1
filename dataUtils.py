@@ -9,10 +9,9 @@ import math
 
 # global variables
 
-input_bands = [i+1 for i in range(0,7)]
+input_bands = [i+1 for i in range(0,3)]
 nBands = len(input_bands)
-ndvi_band = 9
-labels_band = 8
+labels_band = 4
 
 def setGlobalVariables(inputBands, n_Bands):
     
@@ -45,19 +44,43 @@ def processImage(image):
     # read in band data
     ds_features, features = raster.read(image, bands=input_bands) # if just inputting one band, do NOT put the single number in a list to pass to "bands", it causes some issue under the hood
     ds_labels, labels = raster.read(image, bands=labels_band)
-    # remove outer edges of data (which sometimes have issues)
+    output_file_path = "labels_output1.txt"
+
+# # Save the labels to the specified file
+    np.savetxt(output_file_path, labels, delimiter=',')
+#     output_file_path = "labels_output.txt"
+
+# # # Save the labels to the specified file
+#     np.savetxt(output_file_path, features[2], delimiter=',')
+#     remove outer edges of data (which sometimes have issues)
     features = removeOuterEdges(features)
     labels = removeOuterEdges(labels)
 
-    # fill NaNs with 0s
-    features = np.nan_to_num(features)
-    labels = np.nan_to_num(labels)
+    # print(features.shape)
+    # valid_mask = ~np.isnan(labels)
+
+    # # Apply the mask to both features and labels
+    # features = features[:, valid_mask]
+    # labels = labels[valid_mask]
+
+    # # fill NaNs with 0s
+    # features = np.nan_to_num(features)
+    labels = np.nan_to_num(labels,nan=-1)
+
+#     output_file_path = "labels_output.txt"
+
+# # Save the labels to the specified file
+#     np.savetxt(output_file_path, labels, delimiter=',')
 
     # normalize bands - doing this here caused issues with the model fitting for some reason
     # features = normalizeUInt16Band(features)
 
     # convert labels to int for classification
-    labels = (labels == 1).astype(int)
+    # labels = labels.astype(int)
+    output_file_path = "labels_output.txt"
+
+# # Save the labels to the specified file
+    np.savetxt(output_file_path, labels, delimiter=',')
 
     return features, labels, ds_labels
 
@@ -74,17 +97,18 @@ def loadTrainingImages(images_list, downsampleMajority):
         features, labels, _ = processImage(image)
 
         # make some plots just for the first training image
-        if i == 0:
-            ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
-            features_ndvi = removeOuterEdges(features_ndvi)
-            features_ndvi = np.nan_to_num(features_ndvi)
-            name = image.split("/")[-1].split(".")[0][:-5]
-            year = int(image.split("/")[-1].split("_")[2].split(".")[0])
-            print('\nFirst training image NDVI band:')
-            peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
+        # if i == 0:
+        #     ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
+        #     print(features_ndvi)
+        #     features_ndvi = removeOuterEdges(features_ndvi)
+        #     features_ndvi = np.nan_to_num(features_ndvi)
+        #     name = image.split("/")[-1].split(".")[0][:-5]
+        #     year = int(image.split("/")[-1].split("_")[2].split(".")[0])
+        #     print('\nFirst training image NDVI band:')
+        #     peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
 
-            print('\nFirst training image mangroves from labels: ')
-            peu.plotMangroveBand(labels, name, 2000, False, "BasicNN")
+        #     print('\nFirst training image mangroves from labels: ')
+        #     peu.plotMangroveBand(labels, name, year, False, "BasicNN")
  # plot label (mangrove) band
 
         # change dimensions for input into neural net
@@ -126,8 +150,25 @@ def loadTrainingImages(images_list, downsampleMajority):
     # check balance of classes
     training_data_length = len(features)
     print('Using training data of length: ', training_data_length)
-    print(f"Class 0: {np.count_nonzero(labels==0)} Class 1: {np.count_nonzero(labels==1)}")
-    print(f"Class 0: {100 * np.count_nonzero(labels==0)/training_data_length : .1f}% Class 1: {100 * np.count_nonzero(labels==1)/training_data_length : .1f}%")
+    # print(labels)
+#     output_file_path = "labels_output.txt"
+
+# # Save the labels to the specified file
+#     np.savetxt(output_file_path, labels, delimiter=',')
+
+    count0=0
+    count1=0
+    countNeg1=0
+    for i in labels:
+        if(i==-1):
+            countNeg1=countNeg1+1
+        elif(i==0):
+            count0=count0+1
+        else:
+            count1=count1+1
+    print("class -1:",countNeg1)
+    print("class 0:",count0)
+    print("class 1:",count1)
 
     return features, labels
 
@@ -145,15 +186,15 @@ def predictOnImage(model, image):
     features_new, labels_new, ds_labels_new = processImage(image)
     
     # plot NDVI band (if using it)
-    ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
-    features_ndvi = removeOuterEdges(features_ndvi)
-    features_ndvi = np.nan_to_num(features_ndvi)
-    print(f'\nImage {year} NDVI band:')
-    peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
+    # ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
+    # features_ndvi = removeOuterEdges(features_ndvi)
+    # features_ndvi = np.nan_to_num(features_ndvi)
+    # print(f'\nImage {year} NDVI band:')
+    # peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
 
-    # plot labeled Mangrove band
+    # # plot labeled Mangrove band
     print('\nLabel mangroves from 2000 data:')
-    peu.plotMangroveBand(labels_new, name, 2000, False, "BasicNN")
+    peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
 
     # change dimensions of input
     features_new_1D = changeDimension(features_new)
