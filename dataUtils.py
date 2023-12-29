@@ -9,9 +9,9 @@ import math
 
 # global variables
 
-input_bands = [i+1 for i in range(0,3)]
+input_bands = [i+1 for i in range(0,7)]
 nBands = len(input_bands)
-labels_band = 4
+labels_band = 8
 
 def setGlobalVariables(inputBands, n_Bands):
     
@@ -58,7 +58,6 @@ def processImage(image):
 
     # print(features.shape)
     # valid_mask = ~np.isnan(labels)
-
     # # Apply the mask to both features and labels
     # features = features[:, valid_mask]
     # labels = labels[valid_mask]
@@ -77,10 +76,10 @@ def processImage(image):
 
     # convert labels to int for classification
     # labels = labels.astype(int)
-    output_file_path = "labels_output.txt"
+#     output_file_path = "labels_output.txt"
 
-# # Save the labels to the specified file
-    np.savetxt(output_file_path, labels, delimiter=',')
+# # # Save the labels to the specified file
+#     np.savetxt(output_file_path, labels, delimiter=',')
 
     return features, labels, ds_labels
 

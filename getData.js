@@ -21,8 +21,8 @@ var maskClouds = function(image) {
   var saturationMask = image.select('QA_RADSAT').eq(0);
 
   // Apply the scaling factors to the appropriate bands.
-  var opticalBands = image.select('SR_B.')
-  var thermalBands = image.select('ST_B.*')
+  var opticalBands = image.select('SR_B.');
+  var thermalBands = image.select('ST_B.*');
   
   // Replace the original bands with the scaled ones and apply the masks.
   return image.addBands(opticalBands, null, true)
@@ -46,16 +46,18 @@ Map.addLayer(mangroves, mangrovesVis, 'Mangroves in Rectangle', false);
 // Visualize each image in the collection
 images_2022_masked.getInfo(function(images) {
   images.features.forEach(function(feature) {
+    print(feature)
     var image = ee.Image(feature.id);
+    print(image)
     var date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo();
-
-    var visParams = {bands: ['SR_B6','SR_B4','SR_B7'], min: 0, max: 20000};
+    image = maskClouds(image)
+    var visParams = {bands: ['SR_B5','SR_B4','SR_B6'], min: 0, max: 0.3};
     Map.addLayer(image.clip(shapefile), visParams, 'image'+date, false);
     var image_with_mangroves = image.addBands(mangroves, ['Mangroves']).clip(shapefile);
     print('Full 2022 composite'+date, image_with_mangroves);
         // Export 2022 image, with all bands, casted to float
     Export.image.toDrive({
-      image: image_with_mangroves.select('SR_B4', 'SR_B6', 'SR_B7', 'Mangroves').toFloat(),
+      image: image_with_mangroves.select('SR_B5', 'SR_B4', 'SR_B6','SR_B7', 'Mangroves').toFloat(),
       description: 'krishna'+date,
       scale: 30,
       region: shapefile, // .geometry().bounds() needed for multipolygon
@@ -64,4 +66,3 @@ images_2022_masked.getInfo(function(images) {
     });
   });
 });
-
