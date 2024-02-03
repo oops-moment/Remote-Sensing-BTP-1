@@ -9,9 +9,9 @@ import math
 
 # global variables
 
-input_bands = [i+1 for i in range(0,7)]
+input_bands = [i+1 for i in range(0,4)]
 nBands = len(input_bands)
-labels_band = 8
+labels_band = 5
 
 def setGlobalVariables(inputBands, n_Bands):
     
@@ -35,15 +35,15 @@ def removeOuterEdges(x):
 
 def normalizeUInt16Band(band):
     '''Bands 1-7 are uint16, ranging from 0-65535, normalize them by dividing by the max.'''
-    return band/65535.0
+    return band/(np.max(band))
 
 
 def processImage(image):
     '''Process an image and it's data for the fitWithBasicNN.ipynb notebook.'''
-    
     # read in band data
     ds_features, features = raster.read(image, bands=input_bands) # if just inputting one band, do NOT put the single number in a list to pass to "bands", it causes some issue under the hood
     ds_labels, labels = raster.read(image, bands=labels_band)
+    print(features.shape)
     output_file_path = "labels_output1.txt"
 
 # # Save the labels to the specified file
@@ -183,6 +183,9 @@ def predictOnImage(model, image):
     year = int(image.split("/")[-1].split("_")[2].split(".")[0])
 
     features_new, labels_new, ds_labels_new = processImage(image)
+    mask = labels_new != -1
+    features_new = features_new * mask[np.newaxis, :, :]
+    labels_new = labels_new[mask]
     
     # plot NDVI band (if using it)
     # ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
@@ -191,44 +194,77 @@ def predictOnImage(model, image):
     # print(f'\nImage {year} NDVI band:')
     # peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
 
-    # # plot labeled Mangrove band
-    print('\nLabel mangroves from 2000 data:')
-    peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
+    print("mask shape",mask.shape)
+    mask= mask.ravel()
+    print("mask shape",mask.shape)
 
-    # change dimensions of input
+    count=0
+    labels_new_final=[]
+    for i in range(len(mask)):
+        if(mask[i]==False):
+            labels_new_final.append(-1)
+        else:
+            labels_new_final.append(labels_new[count])
+            count=count+1
+    # # plot labeled Mangrove band
+    labels_new_final = np.reshape(labels_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
+    peu.plotMangroveBand(labels_new_final, name, year, False, "BasicNN")
+
+    # change dimensions  of input
     features_new_1D = changeDimension(features_new)
     labels_new_1D = changeDimension(labels_new)
+#     output_file_path = "predicted.txt"
 
+# # # Save the labels to the specified file
+#     np.savetxt(output_file_path, features_new_1D, delimiter=',')
     # reshape it as an additional step for input into the NN
     features_new_1D = features_new_1D.reshape((features_new_1D.shape[0], 1, nBands))
 
     # normalize bands for new image
     features_new_1D = normalizeUInt16Band(features_new_1D)
-
     # predict on new image
     predicted_new_image_prob = model.predict(features_new_1D)
     predicted_new_image_prob = predicted_new_image_prob[:,1]
+    final_result=peu.printClassificationMetrics()
+    output_file_path = "predicted.txt"
 
+# # Save the labels to the specified file
+    np.savetxt(output_file_path, predicted_new_image_prob, delimiter=',')
     # set probability threshold 
     probThresh = 0.5
     
     # reshape prediction into 2D for plotting
     predicted_new_image_aboveThresh = (predicted_new_image_prob > probThresh).astype(int)
-    prediction_new_image_2d = np.reshape(predicted_new_image_aboveThresh, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
 
+    count=0
+    predict_new_final=[]
+    for i in range(len(mask)):
+        if(mask[i]==False):
+            predict_new_final.append(-1)
+        else:
+            predict_new_final.append(predicted_new_image_aboveThresh[count])
+            count=count+1
+
+
+
+    print("1:",len(predict_new_final))
+    print("2:",mask.shape)
+    print(predict_new_final[50000:50100])
+    prediction_new_image_2d = np.reshape(predict_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
+    
     # plot predicted mangroves
     print('\nPredicted mangroves:')
     peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "BasicNN")
 
-    # plot difference in predicted and labeled, or future vs past labeled
-    if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
-    else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
-    peu.plotDifference(labels_new, prediction_new_image_2d, name, year, "BasicNN")
+    # # plot difference in predicted and labeled, or future vs past labeled
+    # if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
+    # else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
+    # peu.plotDifference(labels_new, prediction_new_image_2d, name, year, "BasicNN")
 
-    # print classification metrics
-    if year == 2000:
-        peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
-        peu.makeROCPlot(labels_new_1D, predicted_new_image_prob, name, year, "BasicNN")
+    # # print classification metrics
+    # if year == 2000:
+    #     peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
+    #     peu.makeROCPlot(labels_new_1D, predicted_new_image_prob, name, year, "BasicNN")
     
 
 def processImageCNN(image, kSize, stride):
@@ -277,8 +313,8 @@ def processImageCNN(image, kSize, stride):
         for col in range(margin, cols+margin, stride):            
             feat = features[:, row-margin:row+margin+1, col-margin:col+margin+1]
 
-            b1, b2, b3, b4, b5, b6, b7 = feat # this is hardcoded at the moment which isn't great
-            feat = np.dstack((b1, b2, b3, b4, b5, b6, b7))
+            b1, b2, b3, b4 = feat # this is hardcoded at the moment which isn't great
+            feat = np.dstack((b1, b2, b3, b4))
 
             features_shaped[n, :, :, :] = feat
             n += 1
