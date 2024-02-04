@@ -31,10 +31,10 @@ non_mangrove_patch = mpatches.Patch(color='cornflowerblue', label='Non-Mangrove'
 
 mangrove_patch_pred = mpatches.Patch(color='gold', label='Mangrove (No Change)')
 non_mangrove_patch_pred = mpatches.Patch(color='cornflowerblue', label='Non-Mangrove (No Change)')
-loss_patch_pred = mpatches.Patch(color='red', label='Loss')
-growth_patch_pred = mpatches.Patch(color='olivedrab', label='Growth')
+loss_patch_pred = mpatches.Patch(color='purple', label='False Negative')
+growth_patch_pred = mpatches.Patch(color='olivedrab', label='False Postive')
 
-fn_patch_pred = mpatches.Patch(color='red', label='False Negative')
+fn_patch_pred = mpatches.Patch(color='purple', label='False Negative')
 fp_patch_pred = mpatches.Patch(color='olivedrab', label='False Positive')
 
 
@@ -42,7 +42,7 @@ def plotNVDIBand(input_data, name, year, modelFolder):
     '''Make a plot of the NDVI information for a satellite image.'''
     
     plt.figure()
-    plt.imshow(input_data, cmap='RdYlGn', vmin=-1, vmax=1)
+    plt.imshow(input_data, cmap='Spectral', vmin=-1, vmax=1)
     plt.title("NDVI for " + name + " in " + str(year))
     
     ax = plt.gca()
@@ -96,7 +96,7 @@ def plotDifference(labels_data, predicted_data, name, year, modelFolder):
         plt.title("Predicted vs Actual Mangroves for " + name + " in " + str(year))
         plt.legend(handles=[mangrove_patch_pred, non_mangrove_patch_pred, fp_patch_pred, fn_patch_pred])
     else: 
-        plt.title("Change in Mangroves for " + name + " in " + str(year) + " vs 2000")
+        plt.title("Errors in mangrove prediction")
         plt.legend(handles=[mangrove_patch_pred, non_mangrove_patch_pred, growth_patch_pred, loss_patch_pred])
         
     ax = plt.gca()
@@ -132,6 +132,12 @@ def printClassificationMetrics(y_actual, y_predicted_prob, input_prob=0.5):
     print(classification_report(y_actual, y_predicted))
     
     return f1Score
+
+def makePredictedGraph(y_actual, y_predicted_prob, input_prob=0.5):
+    '''Print various classification metrics.'''
+
+    y_predicted = (y_predicted_prob > input_prob).astype(int) 
+
 
 def makeROCPlot(y_actual, y_predicted_prob, name, year, modelFolder, saveImage=True):
     '''Make an ROC plot from classification results.'''
