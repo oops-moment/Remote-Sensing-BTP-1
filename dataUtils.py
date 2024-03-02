@@ -237,7 +237,74 @@ def predictOnImage(model, image):
     #     peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
     #     peu.makeROCPlot(labels_new_1D, predicted_new_image_prob, name, year, "BasicNN")
 
-def predictOnImageRF(model, image):
+def predictOnImageUsingLabels(model, image,labels):
+    '''Take trained model and apply it to a new image.'''
+    
+    print('\n\nPredicting for image:', image)
+    name = image.split("/")[-1].split(".")[0][:-5]
+    year = int(image.split("/")[-1].split("_")[2].split(".")[0])
+
+    features_new, labels_new, ds_labels_new = processImage(image)
+    # # plot labeled Mangrove band
+    labels_new = np.reshape(labels_new, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
+    peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
+
+    # change dimensions  of input
+    features_new_1D = changeDimension(features_new)
+    labels_new_1D = changeDimension(labels_new)
+    # features_new_1D = features_new_1D.reshape((features_new_1D.shape[0], nBands))
+    mask = labels_new_1D != -1
+    features_new_1D = features_new_1D[mask]
+    labels_new_1D = labels_new_1D[mask] 
+    # normalize bands for new image
+    features_new_1D = normalizeUInt16Band(features_new_1D)
+    # predict on new image
+    predicted_new_image_prob = model.predict(features_new_1D)
+    # predicted_new_image_prob = predicted_new_image_prob[:,1]
+    # final_result=peu.printClassificationMetrics()
+    output_file_path = "predicted.txt"
+
+# # Save the labels to the specified file
+    np.savetxt(output_file_path, predicted_new_image_prob, delimiter=',')
+    # set probability threshold 
+    probThresh = 0.5
+    
+    # reshape prediction into 2D for plotting
+    predicted_new_image_aboveThresh = (predicted_new_image_prob[:,1] > probThresh).astype(int)
+    print("image",predicted_new_image_aboveThresh.shape)
+    count=0
+    mask=mask.ravel()
+    predict_new_final=[]
+    labels_2=[]
+    for i in range(len(mask)):
+        if(mask[i]==False):
+            labels_2.append(-1)
+            predict_new_final.append(-1)
+        else:
+            predict_new_final.append(predicted_new_image_aboveThresh[count])
+            labels_2.append(labels[count])
+            count=count+1
+    print("shape",np.array(predict_new_final).shape)
+    print("hi",ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)
+
+    # prediction_new_image_2d = np.reshape(predict_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
+    prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
+    labels_2d=np.array(labels_2).reshape(751,1027)
+    # plot predicted mangroves
+    print('\nPredicted mangroves:')
+    peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "BasicNN")
+
+    # # plot difference in predicted and labeled, or future vs past labeled
+    # if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
+    # else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
+    peu.plotDifference(labels_2d, prediction_new_image_2d, name, year, "BasicNN")
+
+    # # print classification metrics
+    # if year == 2000:
+    #     peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
+    #     peu.makeROCPlot(labels_new_1D, predicted_new_image_prob, name, year, "BasicNN")
+
+def predictOnImageRF(model, image,labels):
     '''Take trained model and apply it to a new image.'''
     
     print('\n\nPredicting for image:', image)
@@ -275,16 +342,21 @@ def predictOnImageRF(model, image):
     count=0
     mask=mask.ravel()
     predict_new_final=[]
+    labels_3=[]
     for i in range(len(mask)):
         if(mask[i]==False):
             predict_new_final.append(-1)
+            labels_3.append(-1)
         else:
             predict_new_final.append(predicted_new_image_aboveThresh[count])
+            labels_3.append(labels[count])
             count=count+1
     print("shape",np.array(predict_new_final).shape)
     print("hi",ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)
     # prediction_new_image_2d = np.reshape(predict_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
     prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
+    labels_new_image_2d=np.array(labels_3).reshape(751,1027)
+
     # plot predicted mangroves
     print('\nPredicted mangroves:')
     peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "BasicNN")
@@ -292,7 +364,7 @@ def predictOnImageRF(model, image):
     # # plot difference in predicted and labeled, or future vs past labeled
     # if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
     # else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
-    peu.plotDifference(labels_new, prediction_new_image_2d, name, year, "BasicNN")
+    peu.plotDifference(labels_new_image_2d, prediction_new_image_2d, name, year, "BasicNN")
 
     # # print classification metrics
     # if year == 2000:
