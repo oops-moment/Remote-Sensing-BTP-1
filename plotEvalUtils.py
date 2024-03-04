@@ -21,8 +21,8 @@ from sklearn.metrics import confusion_matrix, precision_score, recall_score, acc
 
 
 # define colormap for plots
-discrete_cmap = mpl.colors.ListedColormap(["red", "cornflowerblue", "gold", "olivedrab"], name="discrete_cmap")
-vmin=-1
+discrete_cmap = mpl.colors.ListedColormap(["red","purple", "cornflowerblue", "gold", "olivedrab"], name="discrete_cmap")
+vmin=-2
 vmax=2
 
 # define patches for custom legends
@@ -61,7 +61,7 @@ def plotMangroveBand(input_data, name, year, predicted, modelFolder):
     plt.figure()
     plt.imshow(input_data, cmap=discrete_cmap, vmin=vmin, vmax=vmax)
     if not predicted: plt.title("Labeled Mangroves for " + name + " in " + str(year))
-    else: plt.title("Predicted Mangroves for " + name + " in " + str(year))
+    else: plt.title("Predicted Mangroves for Random Forest" )
     # plt.colorbar()
     plt.legend(handles=[mangrove_patch, non_mangrove_patch])
     
@@ -89,6 +89,7 @@ def plotDifference(labels_data, predicted_data, name, year, modelFolder):
     '''
     
     image_difference = 2 * predicted_data - labels_data
+
     plt.figure()
     plt.imshow(image_difference, cmap=discrete_cmap, vmin=vmin, vmax=vmax)
 #     plt.colorbar()

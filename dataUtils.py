@@ -44,11 +44,11 @@ def processImage(image):
     ds_features, features = raster.read(image, bands=input_bands) # if just inputting one band, do NOT put the single number in a list to pass to "bands", it causes some issue under the hood
     ds_labels, labels = raster.read(image, bands=labels_band)
     print(features.shape)
-    output_file_path = "labels_output1.txt"
+#     output_file_path = "labels_output1.txt"
 
-# # Save the labels to the specified file
-    np.savetxt(output_file_path, labels, delimiter=',')
-#     output_file_path = "labels_output.txt"
+# # # Save the labels to the specified file
+#     np.savetxt(output_file_path, labels, delimiter=',')
+# #     output_file_path = "labels_output.txt"
 
 # # # Save the labels to the specified file
 #     np.savetxt(output_file_path, features[2], delimiter=',')
@@ -98,16 +98,16 @@ def loadTrainingImages(images_list, downsampleMajority):
         # make some plots just for the first training image
         if i == 0:
             ds_ndvi, features_ndvi = raster.read(image, bands=5)
-            print(features_ndvi)
+            # print(features_ndvi)
             features_ndvi = removeOuterEdges(features_ndvi)
             features_ndvi = np.nan_to_num(features_ndvi)
             name = image.split("/")[-1].split(".")[0][:-5]
             year = int(image.split("/")[-1].split("_")[2].split(".")[0])
-            print('\nFirst training image NDVI band:')
-            peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
+            # print('\nFirst training image NDVI band:')
+            # peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
 
-            print('\nFirst training image mangroves from labels: ')
-            peu.plotMangroveBand(labels, name, year, False, "BasicNN")
+            # print('\nFirst training image mangroves from labels: ')
+            # peu.plotMangroveBand(labels, name, year, False, "BasicNN")
 #  plot label (mangrove) band
 
         # change dimensions for input into neural net
@@ -247,7 +247,7 @@ def predictOnImageUsingLabels(model, image,labels):
     features_new, labels_new, ds_labels_new = processImage(image)
     # # plot labeled Mangrove band
     labels_new = np.reshape(labels_new, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
-    peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
+    # peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
 
     # change dimensions  of input
     features_new_1D = changeDimension(features_new)
@@ -314,7 +314,7 @@ def predictOnImageRF(model, image,labels):
     features_new, labels_new, ds_labels_new = processImage(image)
     # # plot labeled Mangrove band
     labels_new = np.reshape(labels_new, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
-    peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
+    # peu.plotMangroveBand(labels_new, name, year, False, "BasicNN")
 
     # change dimensions  of input
     features_new_1D = changeDimension(features_new)
