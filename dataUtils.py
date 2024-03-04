@@ -20,7 +20,12 @@ def setGlobalVariables(inputBands, n_Bands):
     
     input_bands = inputBands
     nBands = n_Bands
-    
+
+sentinal=True
+if sentinal:
+    input_bands = [i+1 for i in range(0,7)]
+    nBands = len(input_bands)
+    labels_band = 8
 
 def removeOuterEdges(x):
     '''Something is off with the top row in the satellite data, and sometimes the other edges, remove them.'''
@@ -222,7 +227,10 @@ def predictOnImage(model, image):
     print("shape",np.array(predict_new_final).shape)
     print("hi",ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)
     # prediction_new_image_2d = np.reshape(predict_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
-    prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
+    if sentinal:
+        prediction_new_image_2d=np.array(predict_new_final).reshape(752,1028)
+    else:
+        prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
     # plot predicted mangroves
     print('\nPredicted mangroves:')
     peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "BasicNN")
@@ -288,8 +296,12 @@ def predictOnImageUsingLabels(model, image,labels):
     print("hi",ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)
 
     # prediction_new_image_2d = np.reshape(predict_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
-    prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
-    labels_2d=np.array(labels_2).reshape(751,1027)
+    if sentinal:
+        prediction_new_image_2d=np.array(predict_new_final).reshape(752,1028)
+        labels_2d=np.array(labels_2).reshape(752,1028)
+    else:
+        prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
+        labels_2d=np.array(labels_2).reshape(751,1027)
     # plot predicted mangroves
     print('\nPredicted mangroves:')
     peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "BasicNN")
@@ -354,8 +366,12 @@ def predictOnImageRF(model, image,labels):
     print("shape",np.array(predict_new_final).shape)
     print("hi",ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)
     # prediction_new_image_2d = np.reshape(predict_new_final, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
-    prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
-    labels_new_image_2d=np.array(labels_3).reshape(751,1027)
+    if sentinal:
+        prediction_new_image_2d=np.array(predict_new_final).reshape(752,1028)
+        labels_new_image_2d=np.array(labels_3).reshape(752,1028)
+    else:
+        prediction_new_image_2d=np.array(predict_new_final).reshape(751,1027)
+        labels_new_image_2d=np.array(labels_3).reshape(751,1027)
 
     # plot predicted mangroves
     print('\nPredicted mangroves:')
@@ -411,8 +427,12 @@ def processImageCNN(image, kSize, stride):
         for col in range(margin, cols+margin, stride):            
             feat = features[:, row-margin:row+margin+1, col-margin:col+margin+1]
 
-            b1, b2, b3, b4 = feat # this is hardcoded at the moment which isn't great
-            feat = np.dstack((b1, b2, b3, b4))
+            if sentinal:
+                b1, b2, b3, b4,b5,b6,b7 = feat # this is hardcoded at the moment which isn't great
+                feat = np.dstack((b1, b2, b3, b4,b5,b6,b7))
+            else:
+                b1, b2, b3, b4 = feat # this is hardcoded at the moment which isn't great
+                feat = np.dstack((b1, b2, b3, b4))
 
             features_shaped[n, :, :, :] = feat
             n += 1
